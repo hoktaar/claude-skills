@@ -295,6 +295,28 @@ Im Slow-Mode werden Timeouts mit einem Multiplikator verlängert — für langsa
 
 ---
 
+## Eigene Hoster entwickeln
+
+Quasarr erkennt neue Quellen **automatisch** per Plugin-Discovery. Es braucht zwei neue Python-Dateien:
+
+```
+quasarr/search/sources/<kürzel>.py      → Suche + Feed (AbstractSearchSource)
+quasarr/downloads/sources/<kürzel>.py   → Link-Extraktion (AbstractDownloadSource)
+```
+
+Das Kürzel (`initials`) entspricht dem Dateinamen und erscheint automatisch im Hostnames-UI nach einem Neustart.
+
+**Bei Login-Quellen zusätzlich:**
+```
+quasarr/providers/sessions/<kürzel>.py  → Session/Login-Provider
+quasarr/storage/config.py              → "<KÜRZEL>" Section in _DEFAULT_CONFIG ergänzen
+```
+
+Vollständige Anleitung mit Templates: `references/custom_hoster_development.md`
+
+---
+
 ## Referenz-Dateien
 
 - `references/docker-compose-full.yml` — vollständiges Docker-Compose-Beispiel
+- `references/custom_hoster_development.md` — Anleitung + Templates für eigene Hoster

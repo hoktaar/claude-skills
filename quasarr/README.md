@@ -85,11 +85,29 @@ Vollständiges Beispiel mit FlareSolverr und SponsorsHelper: siehe [`references/
 | `hs`   | ❌ | | |
 | `mb`   | ❌ | | |
 
+## Eigene Hoster entwickeln
+
+Quasarr erkennt neue Quellen automatisch per Plugin-Discovery — es reichen zwei neue Python-Dateien:
+
+```
+quasarr/search/sources/<kürzel>.py      → Suche + Feed
+quasarr/downloads/sources/<kürzel>.py   → Link-Extraktion
+```
+
+Der Skill enthält vollständige Templates und eine Schritt-für-Schritt-Anleitung für:
+- Einfache Quellen (ohne Login)
+- Login-Quellen mit Session-Provider
+- Link-Extraktion (filecrypt, hide, tolink, keeplinks)
+- Hostname-Issue-Tracking für das Web-UI
+
+→ Siehe [`references/custom_hoster_development.md`](references/custom_hoster_development.md)
+
 ## Referenz-Dateien
 
 | Datei | Beschreibung |
 |-------|-------------|
 | `references/docker-compose-full.yml` | Vollständiges Docker-Compose mit FlareSolverr + optionalem SponsorsHelper |
+| `references/custom_hoster_development.md` | Anleitung + Templates zum Entwickeln eigener Hoster-Quellen |
 
 ## Links
 
