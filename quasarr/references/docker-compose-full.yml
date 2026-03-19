@@ -1,0 +1,74 @@
+# Vollständiges Quasarr Docker-Compose Beispiel
+# Angepasst für Unraid/BigServer (192.168.1.144)
+
+services:
+  # FlareSolverr — für Cloudflare-geschützte Seiten (besonders AL)
+  flaresolverr:
+    container_name: 'FlareSolverr'
+    image: 'ghcr.io/flaresolverr/flaresolverr:latest'
+    restart: unless-stopped
+    ports:
+      - '8191:8191'
+    environment:
+      - 'TZ=Europe/Berlin'
+      - 'LOG_LEVEL=info'
+
+  # Quasarr — Hauptdienst
+  quasarr:
+    container_name: 'Quasarr'
+    image: 'ghcr.io/rix1337/quasarr:latest'
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    volumes:
+      - '/mnt/user/appdata/quasarr/config:/config:rw'
+    environment:
+      # Pflicht bei Docker:
+      - 'DOCKER=true'
+      # URL, über die Radarr/Sonarr Quasarr erreichen:
+      - 'INTERNAL_ADDRESS=http://192.168.1.144:8080'
+      # Optional: externe URL (z.B. hinter Reverse Proxy):
+      # - 'EXTERNAL_ADDRESS=https://quasarr.example.com'
+      # Web-UI Auth (form = Login-Formular, header = Basic Auth, none = offen):
+      - 'AUTH=form'
+      - 'USER=admin'
+      - 'PASS=sicheres-passwort'
+      - 'TZ=Europe/Berlin'
+      # Optionaler Port (Standard: 8080):
+      # - 'PORT=8080'
+    depends_on:
+      - flaresolverr
+
+  # SponsorsHelper — nur für GitHub-Sponsoren (automatisches CAPTCHA-Lösen)
+  # sponsorshelper:
+  #   container_name: 'SponsorsHelper'
+  #   image: 'ghcr.io/rix1337/sponsors-helper:latest'
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - quasarr
+  #   volumes:
+  #     - '/mnt/user/appdata/quasarr/sponsorshelper:/config'
+  #   environment:
+  #     - 'QUASARR_URL=http://192.168.1.144:8080'
+  #     - 'QUASARR_API_KEY=<api-key-aus-quasarr-ui>'
+  #     - 'FLARESOLVERR_URL=http://flaresolverr:8191/v1'
+  #     - 'APIKEY_2CAPTCHA=<dein-2captcha-key>'
+  #     - 'TZ=Europe/Berlin'
+
+# Radarr-Konfiguration (Referenz):
+# Indexer (Newznab):
+#   URL:     http://192.168.1.144:8080
+#   API Key: <aus Quasarr Web-UI>
+#
+# Download Client (SABnzbd):
+#   Host:    192.168.1.144
+#   Port:    8080
+#   API Key: <aus Quasarr Web-UI>
+#
+# Sonarr-Konfiguration: identisch zu Radarr
+# LazyLibrarian SABnzbd+: Host 192.168.1.144, Port 8080, Kategorie "docs"
+
+# Wichtig: JDownloader-Download-Pfad muss in Radarr/Sonarr
+# mit exakt dem gleichen internen und externen Pfad erreichbar sein!
+# Beispiel: /mnt/user/downloads/jdownloader muss in allen Containern
+# unter dem gleichen Pfad gemountet sein.
