@@ -189,6 +189,20 @@ claude-skills/
 
 ---
 
+## AI Coding Tools — Installation
+
+Skills aus diesem Repo funktionieren mit allen gängigen Terminal-Coding-Agenten. Eine vollständige Installationsanleitung für alle Tools findest du in **[AI-CODING-TOOLS.md](AI-CODING-TOOLS.md)**.
+
+| Tool | Install | Skill-Befehl |
+|------|---------|-------------|
+| **Claude Code** | `npm i -g @anthropic-ai/claude-code` | `claude skill install <url>` |
+| **OpenCode** | `curl -fsSL https://opencode.ai/install \| bash` | Skills nach `~/.config/opencode/skills/` |
+| **OpenAI Codex** | `npm i -g @openai/codex` | `codex skill install <url>` |
+| **Gemini CLI** | `npm i -g @google/gemini-cli` | `gemini skill install <url>` |
+| **OpenClaw** | Docker (selbstgehostet) | — |
+
+---
+
 ## Eigene Skills erstellen
 
 Skills können mit dem integrierten `skill-creator` in Claude Code erstellt werden:
