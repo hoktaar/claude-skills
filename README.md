@@ -131,19 +131,60 @@ services:
 
 ---
 
+---
+
+### 🔀 nginx-proxy-manager
+
+**Nginx Proxy Manager per API steuern — Proxy Hosts für Docker-Container auf Unraid anlegen.**
+
+Über die REST API von NPM lassen sich Proxy Hosts vollständig automatisiert erstellen, bearbeiten und löschen — inklusive automatischer Let's Encrypt SSL-Zertifikate.
+
+| | |
+|---|---|
+| **Installieren** | `claude skill install https://github.com/hoktaar/claude-skills/tree/main/nginx-proxy-manager` |
+| **Abhängigkeit** | `pip install requests` |
+| **Benötigt** | Nginx Proxy Manager auf Unraid (BigServer, Port 81) |
+
+**Was der Skill kann:**
+- Token-Authentifizierung gegen NPM API
+- Proxy Hosts anlegen: HTTP/HTTPS, mit/ohne SSL, WebSocket-Support
+- Let's Encrypt SSL-Zertifikat beantragen und zuweisen
+- Hosts auflisten, bearbeiten, aktivieren, deaktivieren, löschen
+- Zertifikate verwalten
+- Fertiges CLI-Hilfsskript für alle Operationen
+
+**Schnellstart:**
+
+```python
+token = requests.post(f"http://192.168.1.144:81/api/tokens",
+    json={"identity": "admin@example.com", "secret": "passwort"}).json()["token"]
+
+requests.post(f"http://192.168.1.144:81/api/nginx/proxy-hosts",
+    headers={"Authorization": f"Bearer {token}"},
+    json={"domain_names": ["service.domain.de"], "forward_scheme": "http",
+          "forward_host": "192.168.1.144", "forward_port": 8080})
+```
+
+---
+
 ## Repo-Struktur
 
 ```
 claude-skills/
 ├── README.md
 ├── myjdownloader/
-│   ├── SKILL.md                        # Hauptdokumentation
+│   ├── SKILL.md
 │   └── references/
-│       └── example_monitor.py          # Beispiel: Links hinzufügen & Status pollen
+│       └── example_monitor.py              # Beispiel: Links hinzufügen & Status pollen
+├── nginx-proxy-manager/
+│   ├── SKILL.md
+│   └── references/
+│       └── npm_helper.py                   # CLI-Skript für alle NPM-Operationen
 └── quasarr/
-    ├── SKILL.md                        # Hauptdokumentation
+    ├── SKILL.md
     └── references/
-        └── docker-compose-full.yml     # Vollständiges Docker-Compose-Beispiel
+        ├── docker-compose-full.yml         # Vollständiges Docker-Compose-Beispiel
+        └── custom_hoster_development.md    # Anleitung + Templates für eigene Hoster
 ```
 
 ---
