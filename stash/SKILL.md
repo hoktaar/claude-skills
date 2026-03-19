@@ -278,6 +278,44 @@ query {
 
 ---
 
+## stashapp-tools — Empfohlenes Python-Paket
+
+Für Plugins und Scrapers immer `stashapp-tools` statt eigener HTTP-Calls verwenden.
+
+```bash
+pip install stashapp-tools
+```
+
+```python
+from stashapi.stashapp import StashInterface
+import stashapi.log as log
+
+# In einem Plugin (aus stdin lesen):
+import json, sys
+inp = json.loads(sys.stdin.read())
+stash = StashInterface(inp["server_connection"])
+
+# Extern / direkt:
+stash = StashInterface({"Scheme": "http", "Host": "localhost", "Port": 9999, "ApiKey": "key"})
+
+# Wichtige Methoden:
+stash.find_scene(id)
+stash.find_scenes(f=scene_filter)
+stash.find_duplicate_scenes(distance=PhashDistance.EXACT)   # HIGH=4, MEDIUM=8, LOW=10
+stash.update_scene({"id": "42", "title": "...", "organized": True})
+stash.merge_tags(source_ids=["1","2"], destination_id="3")
+stash.merge_performers(source_ids, destination_id)
+stash.wait_for_job(job_id)              # Wartet bis Job fertig
+stash.paginate_GQL(query, vars, callback=fn)  # Alle Seiten automatisch
+
+log.info("Nachricht")                   # Logging direkt in Stash
+log.progress(0.5)                       # Fortschrittsbalken (0.0–1.0)
+```
+
+Vollständige Methodenliste + Pagination + StashDB-Integration: `references/stashapp_tools_and_community.md`
+
+---
+
 ## Scraping (Metadaten von externen Quellen)
 
 ```python
@@ -536,6 +574,41 @@ Community Scrapers installieren: Settings → Metadata Providers → Available S
 
 ---
 
+## Scraper-Entwicklung
+
+Scrapers liegen in `~/.stash/scrapers/` als `.yml`-Dateien (+ optionale Python-Scripts).
+**800+ Community-Scrapers** installierbar via: Settings → Metadata Providers → Community (stable)
+
+Drei Scraper-Typen:
+- **XPath** — HTML-Parsing via XPath-Selektoren (nur `.yml`)
+- **JSON** — JSON-API-Parsing (nur `.yml`)
+- **Script** — Python für JS-heavy Sites, Login, komplexe APIs
+
+Vollständige Templates, PostProcess-Operationen, py_common-Bibliothek, Go-Datumsformate:
+→ `references/scraper_development.md`
+
+---
+
+## CommunityScripts — Empfohlene Plugins
+
+| Plugin | Funktion |
+|--------|---------|
+| **RenameFile** | Dateien umbenennen wenn Titel geändert wird |
+| **titleFromFilename** | Titel beim Scan aus Dateinamen setzen |
+| **FileMonitor** | Ordner überwachen → auto-Scan bei Änderungen |
+| **DupFileManager** | Duplikate verwalten + Metadaten mergen |
+| **stashAI** | Tags/Marker per KI (Stash-AIServer) |
+| **LocalVisage** | Darsteller per Gesichtserkennung erkennen |
+| **PlexSync** | Metadaten mit Plex synchronisieren |
+| **tagScenesWithPerfTags** | Performer-Tags auf Szenen übertragen |
+| **pathParser** | Metadaten aus Dateipfad-Struktur extrahieren |
+
+GitHub: https://github.com/stashapp/CommunityScripts
+
+---
+
 ## Referenz-Dateien
 
-- `references/stash_api.py` — Vollständige Python-Hilfklasse für die Stash GraphQL API
+- `references/stash_api.py` — Python-Hilfsklasse für alle GraphQL-Operationen
+- `references/stashapp_tools_and_community.md` — stashapp-tools vollständig, CommunityScripts, stash-box/StashDB API
+- `references/scraper_development.md` — XPath/JSON/Python-Scraper-Templates, py_common, PostProcess-Ops
