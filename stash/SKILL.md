@@ -278,6 +278,165 @@ query {
 
 ---
 
+## Plugins & Scrapers installieren
+
+Stash hat einen eingebauten Package Manager. Plugins und Scrapers lassen sich per API installieren — kein manuelles Kopieren nötig.
+
+**Package-Quellen:**
+- Plugins:  `https://stashapp.github.io/CommunityScripts/stable/index.yml`
+- Scrapers: `https://stashapp.github.io/CommunityScrapers/stable/index.yml`
+
+### Per stash_api.py (empfohlen)
+
+```python
+from stash_api import StashAPI
+stash = StashAPI("http://localhost:9999")
+
+# Plugin per Name installieren (case-insensitive, Teilstring reicht)
+stash.install_package("RenameFile")
+stash.install_package("FileMonitor")
+stash.install_package("DupFileManager")
+stash.install_package("ThumbPreviews")
+stash.install_package("stashAI")
+
+# Scraper installieren
+stash.install_package("StashDB", "Scraper")
+
+# Suchen wenn Name unbekannt
+stash.search_packages("rename")    # findet: renamefile, scenerename, ...
+stash.search_packages("duplicate")
+
+# Alle installierten Plugins anzeigen
+stash.installed_packages("Plugin")
+
+# Alle aktualisieren
+stash.update_all_packages()
+
+# Einzeln aktualisieren
+stash.update_package("RenameFile")
+
+# Deinstallieren
+stash.uninstall_package("ThumbPreviews")
+```
+
+### Alle 80 verfügbaren Plugins (package_id → Name)
+
+```
+AIOverhaul               AIOverhaul
+AHavenVLMConnector       Haven VLM Connector
+AdulttimeInteractiveDL   Adulttime Interactive Downloader
+AudioPlayer              AudioPlayer
+AudioPlayerLite          AudioPlayerLite
+BulkImageScrape          Bulk Image Scrape
+CommunityScriptsUILibrary CommunityScriptsUILibrary
+DupFileManager           DupFileManager
+PythonDepManager         PythonDepManager
+PythonToolsInstaller     Python Tools Installer
+LocalVisage              Local Visage
+PlexSync                 Plex Sync
+GroupAutoScraper         GroupAutoScraper
+TPDBMarkers              The Porn DB Markers
+ThumbPreviews            Thumbnail Previews
+VideoScrollWheel         VideoScrollWheel
+VideoBanner              Video Banner
+ai_tagger                AI Tagger
+audio-transcodes         audio-transcodes
+chooseYourAdventurePlayer Choose Your Adventure Player
+cjCardTweaks             CJ's Card Tweaks
+comicInfoExtractor       Comic Info Extractor
+date_parser              Gallery Date Parser
+defaultDataForPath       Default Data For Path
+deleter                  Additional Files Deleter
+dupeMarker               Dupe Marker Detector
+e621_tagger              e621_tagger
+externalLinksEnhanced    External Links Enhanced
+extraPerformerInfo       Extra Performer Info
+filemonitor              FileMonitor
+filenameParser           Filename Parser
+funscript_haven          Funscript Haven
+funscriptMarkers         Funscript Markers
+hotCards                 Hot Cards
+image_date_from_metadata Image Date From Metadata
+imageGalleryNavigation   Image Gallery Navigation
+markerDeleteButton       Marker Delete Button
+markerTagToScene         Scene Marker Tags to Scene
+miscTags                 Misc Tags
+mobileWallLayout         Mobile Wall Layout
+nfoSceneParser           nfoSceneParser
+pathParser               Path Parser
+performer-poster-backdrop Performer Poster Backdrop
+performerStashboxUrlToID Performer Stashbox Url to ID
+random_button            RandomButton
+renamefile               RenameFile
+sceneCoverCropper        Scene Cover Cropper
+scenePageRememberStates  Scene Page Remember States
+scenerename              SceneRename
+secondaryPerformerImage  Add Secondary Performer Image
+set_scene_cover          Set Scene Cover
+setPerformersFromTags    Set Performers From Tags
+sfwswitch                SFW Switch
+star_identifier          Star Identifier
+stashAppAndroidTvCompanion StashApp Android TV Companion
+stashNotes               Stash Notes
+stashNotifications       StashNotifications
+stashdb-performer-gallery stashdb Performer Gallery
+stashai                  Stash AI
+stats                    Extended Stats
+tagCopyPaste             tagCopyPaste
+tagGalleriesFromImages   Tag Galleries From Images
+tagImagesWithPerfTags    Tag Images From Performer Tags
+tagScenesWithPerfTags    Tag Scenes From Performer Tags
+themeSwitch              Theme Switch
+timestampTrade           Timestamp Trade
+titleFromFilename        titleFromFilename
+untagRedundantTags       Remove Redundant Parent Tags
+videoChapterMarkers      Video Chapter Markers
+Theme-Minimal            Theme - Minimal
+Theme-BlackHole          Theme - BlackHole
+Theme-Night              Theme - Night
+Theme-PulsarLight        Theme - PulsarLight
+Theme-NeonDark           Theme - NeonDark
+Theme-PornHub            Theme - Pornhub
+Theme-Plex               Theme - Plex
+Theme-ColorPalette       Theme - colorPalette
+Theme-RoundedYellow      Theme - Rounded Yellow
+Theme-ModernDark         Theme - ModernDark
+```
+
+Scrapers: 801 verfügbar — `stash.search_packages("sitename", "Scraper")` zum Suchen.
+
+### Per GraphQL direkt
+
+```python
+# Verfügbare Pakete auflisten
+gql("""
+query {
+  availablePackages(
+    type: Plugin,
+    source: "https://stashapp.github.io/CommunityScripts/stable/index.yml"
+  ) { package_id name version metadata }
+}
+""")
+
+# Installieren
+gql("""
+mutation {
+  installPackages(type: Plugin, packages: [{
+    id: "renamefile",
+    sourceURL: "https://stashapp.github.io/CommunityScripts/stable/index.yml"
+  }])
+}
+""")
+
+# Alle aktualisieren
+gql("mutation { updatePackages(type: Plugin, packages: null) }")
+
+# Installierte anzeigen
+gql("query { installedPackages(type: Plugin) { package_id name version } }")
+```
+
+---
+
 ## stashapp-tools — Empfohlenes Python-Paket
 
 Für Plugins und Scrapers immer `stashapp-tools` statt eigener HTTP-Calls verwenden.

@@ -305,6 +305,168 @@ query {
         return self.gql("query { systemStatus { databaseSchema appSchema status databasePath } }")["systemStatus"]
 
     # -------------------------------------------------------------------------
+    # Package Manager (Plugins & Scrapers installieren)
+    # -------------------------------------------------------------------------
+
+    PLUGIN_SOURCE  = "https://stashapp.github.io/CommunityScripts/stable/index.yml"
+    SCRAPER_SOURCE = "https://stashapp.github.io/CommunityScrapers/stable/index.yml"
+
+    def available_packages(self, package_type="Plugin", source=None):
+        """Alle verfügbaren Pakete aus dem Community-Index laden.
+        package_type: 'Plugin' | 'Scraper'
+        """
+        if source is None:
+            source = self.PLUGIN_SOURCE if package_type == "Plugin" else self.SCRAPER_SOURCE
+        return self.gql("""
+query AvailablePackages($type: PackageType!, $source: String!) {
+  availablePackages(type: $type, source: $source) {
+    package_id name version date
+    metadata
+    source_package { version date }
+  }
+}
+""", {"type": package_type, "source": source})["availablePackages"]
+
+    def installed_packages(self, package_type="Plugin"):
+        """Alle installierten Pakete auflisten."""
+        return self.gql("""
+query InstalledPackages($type: PackageType!) {
+  installedPackages(type: $type) {
+    package_id name version date
+    source_package { version date }
+  }
+}
+""", {"type": package_type})["installedPackages"]
+
+    def find_package(self, name_or_id, package_type="Plugin"):
+        """Paket per Name oder ID im Community-Index suchen.
+        Gibt dict mit package_id und sourceURL zurück, oder None.
+        """
+        source = self.PLUGIN_SOURCE if package_type == "Plugin" else self.SCRAPER_SOURCE
+        packages = self.available_packages(package_type, source)
+        needle = name_or_id.lower()
+        # Exakter ID-Match zuerst
+        for p in packages:
+            if p["package_id"].lower() == needle:
+                p["sourceURL"] = source
+                return p
+        # Name-Match (Teilstring)
+        matches = [p for p in packages if needle in p["name"].lower()]
+        if len(matches) == 1:
+            matches[0]["sourceURL"] = source
+            return matches[0]
+        if len(matches) > 1:
+            return matches  # Mehrere Treffer zurückgeben
+        return None
+
+    def install_package(self, name_or_id, package_type="Plugin"):
+        """Plugin oder Scraper per Name oder ID aus dem Community-Index installieren.
+
+        Beispiele:
+            stash.install_package("RenameFile")
+            stash.install_package("renamefile")          # case-insensitive
+            stash.install_package("FileMonitor")
+            stash.install_package("ThumbPreviews")
+            stash.install_package("Stash DB", "Scraper") # Scraper installieren
+        """
+        source = self.PLUGIN_SOURCE if package_type == "Plugin" else self.SCRAPER_SOURCE
+        result = self.find_package(name_or_id, package_type)
+
+        if result is None:
+            raise ValueError(
+                f"Kein {package_type} gefunden für '{name_or_id}'. "
+                f"Tipp: stash.search_packages('{name_or_id}') für ähnliche Treffer."
+            )
+        if isinstance(result, list):
+            names = [f"  - {p['package_id']} ({p['name']})" for p in result]
+            raise ValueError(
+                f"Mehrere Treffer für '{name_or_id}':\n" + "\n".join(names) +
+                "\nBitte exakte package_id verwenden."
+            )
+
+        job_id = self.gql("""
+mutation InstallPackages($type: PackageType!, $packages: [PackageSpecInput!]!) {
+  installPackages(type: $type, packages: $packages)
+}
+""", {
+            "type": package_type,
+            "packages": [{"id": result["package_id"], "sourceURL": source}]
+        })["installPackages"]
+
+        print(f"Installation gestartet: {result['name']} v{result.get('version', '?')} (Job: {job_id})")
+        return job_id
+
+    def update_package(self, name_or_id, package_type="Plugin"):
+        """Installiertes Paket aktualisieren."""
+        source = self.PLUGIN_SOURCE if package_type == "Plugin" else self.SCRAPER_SOURCE
+        result = self.find_package(name_or_id, package_type)
+        if result is None or isinstance(result, list):
+            raise ValueError(f"Paket '{name_or_id}' nicht eindeutig gefunden.")
+        job_id = self.gql("""
+mutation UpdatePackages($type: PackageType!, $packages: [PackageSpecInput!]) {
+  updatePackages(type: $type, packages: $packages)
+}
+""", {
+            "type": package_type,
+            "packages": [{"id": result["package_id"], "sourceURL": source}]
+        })["updatePackages"]
+        print(f"Update gestartet: {result['name']} (Job: {job_id})")
+        return job_id
+
+    def uninstall_package(self, name_or_id, package_type="Plugin"):
+        """Paket deinstallieren."""
+        source = self.PLUGIN_SOURCE if package_type == "Plugin" else self.SCRAPER_SOURCE
+        result = self.find_package(name_or_id, package_type)
+        if result is None or isinstance(result, list):
+            raise ValueError(f"Paket '{name_or_id}' nicht eindeutig gefunden.")
+        job_id = self.gql("""
+mutation UninstallPackages($type: PackageType!, $packages: [PackageSpecInput!]!) {
+  uninstallPackages(type: $type, packages: $packages)
+}
+""", {
+            "type": package_type,
+            "packages": [{"id": result["package_id"], "sourceURL": source}]
+        })["uninstallPackages"]
+        print(f"Deinstallation gestartet: {result['name']} (Job: {job_id})")
+        return job_id
+
+    def search_packages(self, query, package_type="Plugin"):
+        """Pakete per Suchbegriff durchsuchen und übersichtlich ausgeben."""
+        packages = self.available_packages(package_type)
+        q = query.lower()
+        matches = [
+            p for p in packages
+            if q in p["name"].lower()
+            or q in p["package_id"].lower()
+            or q in str(p.get("metadata", {}).get("description", "")).lower()
+        ]
+        if not matches:
+            print(f"Keine Treffer für '{query}'")
+            return []
+        print(f"{len(matches)} Treffer für '{query}':")
+        for p in matches:
+            desc = p.get("metadata", {}).get("description", "")
+            print(f"  {p['package_id']:40} {p['name']}")
+            if desc:
+                print(f"  {'':40} → {desc[:80]}")
+        return matches
+
+    def update_all_packages(self, package_type=None):
+        """Alle installierten Pakete aktualisieren."""
+        types = ["Plugin", "Scraper"] if package_type is None else [package_type]
+        job_ids = []
+        for t in types:
+            source = self.PLUGIN_SOURCE if t == "Plugin" else self.SCRAPER_SOURCE
+            job_id = self.gql("""
+mutation UpdatePackages($type: PackageType!, $packages: [PackageSpecInput!]) {
+  updatePackages(type: $type, packages: $packages)
+}
+""", {"type": t, "packages": None})["updatePackages"]
+            print(f"Update aller {t}s gestartet (Job: {job_id})")
+            job_ids.append(job_id)
+        return job_ids
+
+    # -------------------------------------------------------------------------
     # Plugins
     # -------------------------------------------------------------------------
 
