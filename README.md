@@ -172,19 +172,56 @@ requests.post(f"http://192.168.1.144:81/api/nginx/proxy-hosts",
 ```
 claude-skills/
 ├── README.md
+├── AI-CODING-TOOLS.md                          # Installationsanleitung für alle AI-Tools
 ├── myjdownloader/
 │   ├── SKILL.md
 │   └── references/
-│       └── example_monitor.py              # Beispiel: Links hinzufügen & Status pollen
+│       └── example_monitor.py
 ├── nginx-proxy-manager/
 │   ├── SKILL.md
 │   └── references/
-│       └── npm_helper.py                   # CLI-Skript für alle NPM-Operationen
-└── quasarr/
+│       └── npm_helper.py
+├── quasarr/
+│   ├── SKILL.md
+│   └── references/
+│       ├── docker-compose-full.yml
+│       └── custom_hoster_development.md
+└── stash/
     ├── SKILL.md
     └── references/
-        ├── docker-compose-full.yml         # Vollständiges Docker-Compose-Beispiel
-        └── custom_hoster_development.md    # Anleitung + Templates für eigene Hoster
+        └── stash_api.py
+```
+
+---
+
+### 🎬 stash
+
+**Stash — selbst-gehosteter Medien-Manager — per GraphQL API steuern und automatisieren.**
+
+[Stash](https://github.com/stashapp/stash) organisiert, taggt und streamt Video- und Bildsammlungen. Der Skill deckt die komplette GraphQL API, Plugin-Entwicklung, Scraping und Jobs ab.
+
+| | |
+|---|---|
+| **Installieren** | `claude skill install https://github.com/hoktaar/claude-skills/tree/main/stash` |
+| **Abhängigkeit** | `pip install requests` |
+| **Benötigt** | Stash läuft auf Port 9999 |
+
+**Was der Skill kann:**
+- Vollständige GraphQL API (Szenen, Performer, Studios, Tags, Galleries suchen/erstellen/updaten)
+- Jobs starten: Scan, Generate, Auto-Tag, Identify (StashDB), Clean, Optimize
+- Mächtiges Filter-System mit allen Modifiern
+- Scraping — StashDB, CommunityScrapers, URL-Scraping
+- Plugin-Entwicklung (Python & JavaScript) mit fertigen Templates und allen Hook-Triggern
+- Docker-Setup für Unraid/BigServer
+
+**Schnellstart:**
+```python
+from stash_api import StashAPI
+stash = StashAPI("http://localhost:9999")
+print(stash.stats())                                    # Statistiken
+stash.find_scenes(q="titel", per_page=25)              # Suche
+stash.update_scene("42", rating100=80, organized=True) # Update
+stash.scan()                                            # Bibliothek scannen
 ```
 
 ---
